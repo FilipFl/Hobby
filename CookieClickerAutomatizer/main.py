@@ -3,6 +3,7 @@ import numpy as np
 from PIL import ImageGrab
 from pynput.mouse import Button, Controller
 import pytesseract
+import time
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\Program Files\Tesseract-OCR\\tesseract.exe'
 
@@ -17,6 +18,7 @@ class CookieClickerAutomatizer:
         self.counter = 0
         self.lastx = 0
         self.lasty = 0
+        self.lastspelltime = time.perf_counter()
 
     def get_text(self, frame):
         return pytesseract.image_to_string(frame, config="--psm 1")
@@ -46,6 +48,7 @@ class CookieClickerAutomatizer:
             if self.lastx != x and self.lasty != y:
                 self.mouse.position = (x, y)
                 self.mouse.click(Button.left, 1)
+                self.mouse.position = (924, 400)
                 self.counter += 1
                 print(self.counter)
                 self.lastx = x
@@ -60,23 +63,26 @@ class CookieClickerAutomatizer:
         if mask_yellow.any() != 0:
             self.mouse.position = (850, 150)
             self.mouse.click(Button.left, 1)
+            self.mouse.position = (924, 400)
             print("Fortune!")
 
     def castaspell(self, frame):
-        cropped = frame[340:370, 900:950]
-        cropped = cv2.resize(cropped, (500, 300), 0, 0)
-        cropped = cv2.dilate(cropped, self.kernel, iterations=4)
-        cropped = cv2.erode(cropped, self.kernel, iterations=3)
-        mask1 = cv2.inRange(cropped, (220, 220, 220), (255, 255, 255))
-        cropped = cv2.bitwise_and(cropped, cropped, mask=mask1)
-        cropped = cv2.bitwise_not(cropped)
-        str = self.get_text(cropped)
-        mana = str.split("/")
-        if mana[0].isdigit() and mana[1].isdigit():
-            if mana[0] == mana[1]:
-                self.mouse.position = (924, 284)
-                self.mouse.click(Button.left,1)
-                self.mouse.position = (924, 400)
+        if self.lastspelltime<time.perf_counter()-1:
+            cropped = frame[340:370, 900:950]
+            cropped = cv2.resize(cropped, (500, 300), 0, 0)
+            cropped = cv2.dilate(cropped, self.kernel, iterations=4)
+            cropped = cv2.erode(cropped, self.kernel, iterations=3)
+            mask1 = cv2.inRange(cropped, (220, 220, 220), (255, 255, 255))
+            cropped = cv2.bitwise_and(cropped, cropped, mask=mask1)
+            cropped = cv2.bitwise_not(cropped)
+            str = self.get_text(cropped)
+            mana = str.split("/")
+            if mana[0].isdigit() and mana[1].isdigit():
+                if mana[0] == mana[1]:
+                    self.mouse.position = (924, 284)
+                    self.mouse.click(Button.left,1)
+                    self.mouse.position = (924, 400)
+                    self.lastspelltime = time.perf_counter()
 
 
 if __name__ == '__main__':
