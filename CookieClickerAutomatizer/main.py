@@ -93,14 +93,17 @@ class CookieClickerAutomatizer:
             cropped = cv2.bitwise_not(cropped)
             str = self.get_text(cropped)
             mana = str.split("/")
-            if mana[0].isdigit() and mana[1].isdigit():
-                if mana[0] == mana[1]:
-                    self.mouse.position = (924, 284)
-                    self.mouse.click(Button.left,1)
-                    self.mouse.position = (924, 700)
-                    self.lastspelltime = time.perf_counter()
-                    self.spellcounter += 1
-                    print("I casted {}. spell!".format(self.spellcounter))
+            try:
+                if mana[0].isdigit() and mana[1].isdigit():
+                    if mana[0] == mana[1]:
+                        self.mouse.position = (924, 284)
+                        self.mouse.click(Button.left,1)
+                        self.mouse.position = (924, 700)
+                        self.lastspelltime = time.perf_counter()
+                        self.spellcounter += 1
+                        print("I casted {}. spell!".format(self.spellcounter))
+            except IndexError:
+                pass
 
     def seekreindeer(self, frame):
         frame = cv2.resize(frame, (840, 525))
@@ -112,11 +115,14 @@ class CookieClickerAutomatizer:
         if flag:
             x = 35 + (max_loc[0] + self.reindeertemplate_w / 2) * 2
             y = (max_loc[1] + self.reindeertemplate_h / 2) * 2
-            self.mouse.position = (x, y)
-            self.mouse.click(Button.left, 1)
-            self.mouse.position = (924, 700)
-            self.reindeercounter += 1
-            print("Clicked {}. reindeer!".format(self.reindeercounter))
+            if 250 < y < 360 and 650 < x < 1200 or 1360 < x:
+                pass
+            else:
+                self.mouse.position = (x, y)
+                self.mouse.click(Button.left, 1)
+                self.mouse.position = (924, 700)
+                self.reindeercounter += 1
+                print("Clicked {}. reindeer!".format(self.reindeercounter))
 
     def seekwrath(self, frame):
         if self.lastwrathtime < time.perf_counter()-1:
