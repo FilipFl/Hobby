@@ -4,6 +4,7 @@ from PIL import ImageGrab
 from pynput.mouse import Button, Controller
 import pytesseract
 import time
+import argparse
 
 pytesseract.pytesseract.tesseract_cmd = 'C:\Program Files\Tesseract-OCR\\tesseract.exe'
 
@@ -20,7 +21,8 @@ class CookieClickerAutomatizer:
     wrathtemplate_w, wrathtemplate_h = wrathtemplate.shape[0], wrathtemplate.shape[1]
 
 
-    def __init__(self):
+    def __init__(self, options):
+        self.working = True
         self.mouse = Controller()
         self.cookiecounter = 0
         self.fortunecounter = 0
@@ -31,22 +33,35 @@ class CookieClickerAutomatizer:
         self.lastfortunetime = time.perf_counter()
         self.lastcookietime = time.perf_counter()
         self.lastwrathtime = time.perf_counter()
+        self.options = options
+        print(self.options)
+
+    def is_working(self):
+        return self.working
 
     def get_text(self, frame):
         return pytesseract.image_to_string(frame, config="--psm 1")
 
     def process(self):
-        frame = ImageGrab.grab(bbox=(0, 0, 1650, 1080), )
-        frame = np.array(frame)
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        #grayframe = frame.copy()
-        #grayframe = cv2.cvtColor(grayframe, cv2.COLOR_BGR2GRAY)
-        self.seekwrath(frame)
-        self.seekreindeer(frame)
-        #self.seekgoldencookie(grayframe)
-        self.checkforfortune(frame)
-        self.castaspell(frame)
-
+        if self.mouse.position==(1679,0):
+            self.working = False
+            print("Exiting!")
+        else:
+            frame = ImageGrab.grab(bbox=(0, 0, 1650, 1080), )
+            frame = np.array(frame)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            if self.options[0]:
+                grayframe = frame.copy()
+                grayframe = cv2.cvtColor(grayframe, cv2.COLOR_BGR2GRAY)
+                self.seekgoldencookie(grayframe)
+            if self.options[1]:
+                self.castaspell(frame)
+            if self.options[2]:
+                self.checkforfortune(frame)
+            if self.options[3]:
+                self.seekreindeer(frame)
+            if self.options[4]:
+                self.seekwrath(frame)
 
     def seekgoldencookie(self, frame):
         if self.lastcookietime < time.perf_counter()-1:
@@ -143,9 +158,31 @@ class CookieClickerAutomatizer:
 
 
 if __name__ == '__main__':
-    automatizer = CookieClickerAutomatizer()
-    while True:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--golden", help="Seek golden cookies", action="store_true")
+    parser.add_argument("--spell", help="Cast a spell", action="store_true")
+    parser.add_argument("--fortune", help="Search for fortune", action="store_true")
+    parser.add_argument("--deer", help="Seek reindeers", action="store_true")
+    parser.add_argument("--wrath", help="Seek wrath cookies", action="store_true")
+    args = parser.parse_args()
+    flags = [False for i in range(5)]
+    if args.golden:
+        flags[0] = True
+    if args.spell:
+        flags[1] = True
+    if args.fortune:
+        flags[2] = True
+    if args.deer:
+        flags[3] = True
+    if args.wrath:
+        flags[4] = True
+
+    automatizer = CookieClickerAutomatizer(flags)
+
+    while automatizer.is_working():
         automatizer.process()
+
+
 
 
 
