@@ -9,17 +9,10 @@ import argparse
 pytesseract.pytesseract.tesseract_cmd = 'C:\Program Files\Tesseract-OCR\\tesseract.exe'
 
 class CookieClickerAutomatizer:
-    template = cv2.imread("image.png")
-    template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-    template_w, template_h = template.shape[0], template.shape[1]
     kernel = np.ones((5, 5), np.uint8)
     reindeertemplate = cv2.imread("newdeer.png")
     reindeertemplate = cv2.resize(reindeertemplate, (int(reindeertemplate.shape[1] / 2), int(reindeertemplate.shape[0] / 2)))
     reindeertemplate_w, reindeertemplate_h = reindeertemplate.shape[0], reindeertemplate.shape[1]
-    wrathtemplate = cv2.imread("badcookie.png")
-    wrathtemplate = cv2.resize(wrathtemplate, (int(wrathtemplate.shape[1]), int(wrathtemplate.shape[0])))
-    wrathtemplate_w, wrathtemplate_h = wrathtemplate.shape[0], wrathtemplate.shape[1]
-
 
     def __init__(self, options):
         self.working = True
@@ -35,6 +28,35 @@ class CookieClickerAutomatizer:
         self.lastwrathtime = time.perf_counter()
         self.options = options
         print(self.options)
+        if self.options[-1] is True:
+            self.screensize = (1920, 1080)
+            self.manatop = (1000, 422)
+            self.manabot = (1076, 435)
+            self.toplimit = 300
+            self.rightlimit = 1516
+            self.wraththresh = True
+            self.deerthresh = True
+            self.goldthresh = True
+            self.spellpoint = (1044, 356)
+            self.mouserest = (1044, 700)
+            self.template = cv2.imread("smallgold.png")
+            self.wrathtemplate = cv2.imread("smallwrath.png")
+        else:
+            self.screensize = (1650,1080)
+            self.manatop = (900, 340)
+            self.manabot = (950, 370)
+            self.toplimit = 300
+            self.rightlimit = 1516
+            self.wraththresh = True
+            self.deerthresh = True
+            self.goldthresh = True
+            self.spellpoint = (924, 284)
+            self.mouserest = (924, 700)
+            self.template = cv2.imread("image.png")
+            self.wrathtemplate = cv2.imread("badcookie.png")
+        self.template = cv2.cvtColor(self.template, cv2.COLOR_BGR2GRAY)
+        self.template_w, self.template_h = self.template.shape[0], self.template.shape[1]
+        self.wrathtemplate_w, self.wrathtemplate_h = self.wrathtemplate.shape[0], self.wrathtemplate.shape[1]
 
     def is_working(self):
         return self.working
@@ -43,11 +65,11 @@ class CookieClickerAutomatizer:
         return pytesseract.image_to_string(frame, config="--psm 1")
 
     def process(self):
-        if self.mouse.position==(1679,0):
+        if self.mouse.position[1] < 100:
             self.working = False
             print("Exiting!")
         else:
-            frame = ImageGrab.grab(bbox=(0, 0, 1650, 1080), )
+            frame = ImageGrab.grab(bbox=(0, 0, self.screensize[0], self.screensize[1]), )
             frame = np.array(frame)
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             if self.options[0]:
@@ -75,7 +97,7 @@ class CookieClickerAutomatizer:
                 y = max_loc[1] + self.template_h / 2
                 self.mouse.position = (x, y)
                 self.mouse.click(Button.left, 1)
-                self.mouse.position = (924, 700)
+                self.mouse.position = self.mouserest
                 self.cookiecounter += 1
                 self.lastcookietime = time.perf_counter()
                 print("I clicked {}. cookie!".format(self.cookiecounter))
@@ -91,7 +113,7 @@ class CookieClickerAutomatizer:
             if mask_yellow.any() != 0:
                 self.mouse.position = (850, 150)
                 self.mouse.click(Button.left, 1)
-                self.mouse.position = (924, 700)
+                self.mouse.position = self.mouserest
                 self.lastfortunetime = time.perf_counter()
                 self.fortunecounter += 1
                 print("I clicked {}. fortune!".format(self.fortunecounter))
@@ -99,7 +121,7 @@ class CookieClickerAutomatizer:
 
     def castaspell(self, frame):
         if self.lastspelltime < time.perf_counter()-1:
-            cropped = frame[340:370, 900:950]
+            cropped = frame[self.manatop[1]:self.manabot[1], self.manatop[0]:self.manabot[0]]
             cropped = cv2.resize(cropped, (500, 300), 0, 0)
             cropped = cv2.dilate(cropped, self.kernel, iterations=4)
             cropped = cv2.erode(cropped, self.kernel, iterations=3)
@@ -111,14 +133,14 @@ class CookieClickerAutomatizer:
             try:
                 if mana[0].isdigit() and mana[1].isdigit():
                     if mana[0] == mana[1]:
-                        self.mouse.position = (924, 284)
+                        self.mouse.position = self.spellpoint
                         self.mouse.click(Button.left,1)
-                        self.mouse.position = (924, 700)
+                        self.mouse.position = self.mouserest
                         self.lastspelltime = time.perf_counter()
                         self.spellcounter += 1
                         print("I casted {}. spell!".format(self.spellcounter))
             except IndexError:
-                pass
+                self.working = False
 
     def seekreindeer(self, frame):
         frame = cv2.resize(frame, (840, 525))
@@ -135,7 +157,7 @@ class CookieClickerAutomatizer:
             else:
                 self.mouse.position = (x, y)
                 self.mouse.click(Button.left, 1)
-                self.mouse.position = (924, 700)
+                self.mouse.position = self.mouserest
                 self.reindeercounter += 1
                 print("Clicked {}. reindeer!".format(self.reindeercounter))
 
@@ -151,7 +173,7 @@ class CookieClickerAutomatizer:
                 y = max_loc[1] + self.wrathtemplate_h / 2
                 self.mouse.position = (x, y)
                 self.mouse.click(Button.left, 1)
-                self.mouse.position = (924, 700)
+                self.mouse.position = self.mouserest
                 self.lastwrathtime = time.perf_counter()
                 self.wrathcounter += 1
                 print("I clicked {}. wrath cookie!".format(self.wrathcounter))
@@ -164,8 +186,10 @@ if __name__ == '__main__':
     parser.add_argument("--fortune", help="Search for fortune", action="store_true")
     parser.add_argument("--deer", help="Seek reindeers", action="store_true")
     parser.add_argument("--wrath", help="Seek wrath cookies", action="store_true")
+    parser.add_argument("--single", help="Single screen setup", action="store_true")
+
     args = parser.parse_args()
-    flags = [False for i in range(5)]
+    flags = [False for i in range(6)]
     if args.golden:
         flags[0] = True
     if args.spell:
@@ -176,6 +200,8 @@ if __name__ == '__main__':
         flags[3] = True
     if args.wrath:
         flags[4] = True
+    if args.single:
+        flags[5] = True
 
     automatizer = CookieClickerAutomatizer(flags)
 
